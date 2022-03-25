@@ -1,12 +1,13 @@
 const { Telegraf } = require('telegraf')
+const TextToSVG = require('text-to-svg');
+const axios = require('axios').default;
+const sharp = require('sharp');
 
 const bot = new Telegraf(process.env.BOT_TOKEN)
+
 bot.start((ctx) => ctx.reply('JayBot start'));
+
 bot.help((ctx) => ctx.reply('Ask J'));
-bot.command('demo', (ctx) => {
-	ctx.replyWithPhoto({ url: "https://i.ytimg.com/vi/528Iafd1QlU/hg" }, { caption: "cat photo" })
-	//ctx.replyWithPhoto({ source: Buffer.alloc(10) }, { caption: "cat photo" })	
-});
 
 bot.command('meme', (ctx) => {
 
@@ -32,12 +33,37 @@ bot.command('meme', (ctx) => {
 	ctx.telegram.getFileLink( photos[biggestIndex].file_id ).then(
 		(link)=>{
 			console.log(link);
-		}
-	);	
 
-	ctx.update.message.text.split('#');
-	
-	//ctx.replyWithPhoto({ source: Buffer.alloc(10) }, { caption: "cat photo" })	
+
+
+			const textToSVG = TextToSVG.loadSync();
+		 
+			const attributes = {fill: 'whire', stroke: 'black'};
+			const options = {x: 0, y: 0, fontSize: 90, anchor: 'top', attributes: attributes};
+			 
+			const topText = textToSVG.getSVG('TOP TEXT', options);
+			const bottomText = textToSVG.getSVG('BOTTOM TEXT', options);
+
+			let url = "http:URL"; // Example
+
+			axios.get(url,  { responseType: 'arraybuffer' }).then(function (response) {
+				const buffer = Buffer.from(response.data, "utf-8");
+
+				sharp(buffer)
+				.composite([{
+					input: Buffer.from(topText),
+					gravity: 'north'
+				}, {
+					input: Buffer.from(bottomText),
+					gravity: 'south'
+				}])
+				.toBuffer()
+				.then(function (buffer) {
+					ctx.replyWithPhoto({ source: buffer }, { caption: "cat photo" });
+				});
+			})
+		}
+	);
 });
 
 bot.launch()
